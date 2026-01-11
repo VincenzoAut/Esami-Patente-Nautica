@@ -1,183 +1,146 @@
 # FILE: ui.py
-# VERSION: v102.3 (Fix Missing rank box + Compass Position)
-# DATE: 2026-01-11
+# VERSION: v54.0 (Mobile UX & Visual Feedback)
+# DATE: 2026-01-10 21:45
 
 import streamlit as st
 import base64
 import os
 
 def get_base64_of_bin_file(bin_file):
-    """Converte un file binario (immagine) in base64 per l'uso nel CSS."""
     try:
         with open(bin_file, 'rb') as f: data = f.read()
         return base64.b64encode(data).decode()
     except FileNotFoundError: return None
 
-def load_css():
-    """Carica gli stili base dell'interfaccia (nasconde menu, footer, ecc)."""
-    st.markdown("""
-    <style>
-        /* Nascondi elementi standard di Streamlit */
-        #MainMenu {visibility: hidden;}
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
-        .stDeployButton {display:none;}
-        
-        /* Stile Barra di Progresso */
-        .stProgress > div > div > div > div {
-            background-image: linear-gradient(to right, #4caf50, #8bc34a);
-        }
-        
-        /* Stile Box Crediti */
-        .credits-box {
-            font-size: 0.75em;
-            color: #888;
-            text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
-
-        /* Stile Bottoni */
-        div.row-widget.stButton > button {
-            font-weight: bold;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
 def set_backgrounds(main_bg, sidebar_bg):
-    """Imposta gli sfondi per l'app principale e la sidebar."""
-    
-    # 1. SFONDO PRINCIPALE (Bussola in basso)
     if os.path.exists(main_bg):
         bin_str = get_base64_of_bin_file(main_bg)
-        st.markdown(f"""
-        <style>
-            .stApp {{ 
-                background-image: url(data:image/jpg;base64,{bin_str}) !important; 
-                background-size: cover !important; 
-                /* ANCORAGGIO IN BASSO PER LA BUSSOLA */
-                background-position: bottom center !important; 
-                background-repeat: no-repeat !important;
-                background-attachment: fixed !important; 
-            }}
-        </style>
-        """, unsafe_allow_html=True)
-        
-    # 2. SFONDO SIDEBAR
+        st.markdown(f"""<style>.stApp {{ background-image: url(data:image/jpg;base64,{bin_str}) !important; background-size: cover !important; background-attachment: fixed !important; }}</style>""", unsafe_allow_html=True)
     if os.path.exists(sidebar_bg):
         bin_str_side = get_base64_of_bin_file(sidebar_bg)
-        st.markdown(f"""
-        <style>
-            section[data-testid="stSidebar"] {{ 
-                background-image: url(data:image/jpg;base64,{bin_str_side}) !important; 
-                background-size: cover !important; 
-                background-position: center center !important;
-            }} 
-            section[data-testid="stSidebar"] > div:first-child {{ 
-                background-color: rgba(255, 255, 255, 0.1); 
-            }}
-        </style>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<style>section[data-testid="stSidebar"] {{ background-image: url(data:image/jpg;base64,{bin_str_side}) !important; background-size: cover !important; }} section[data-testid="stSidebar"] > div:first-child {{ background-color: rgba(255, 255, 255, 0.5) !important; }}</style>""", unsafe_allow_html=True)
 
-def draw_rank_box(rank_name, mastered_count, next_threshold):
-    """Visualizza il grado attuale dell'utente nella sidebar."""
-    
-    # Calcola il testo per il prossimo livello
-    next_text = ""
-    try:
-        if isinstance(next_threshold, (int, float)):
-            left = int(next_threshold) - int(mastered_count)
-            if left > 0:
-                next_text = f"Mancano {left} giuste al prossimo grado"
-            else:
-                next_text = "Massimo grado raggiunto!"
-        else:
-            next_text = str(next_threshold)
-    except:
-        next_text = ""
-
-    st.markdown(f"""
-    <div style="
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 10px;
-        padding: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        text-align: center;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    ">
-        <div style="font-size: 0.8em; color: #ccc; text-transform: uppercase; letter-spacing: 1px;">Grado Attuale</div>
-        <div style="font-size: 1.3em; font-weight: bold; color: #FFD700; margin: 5px 0;">⚓ {rank_name}</div>
-        <div style="font-size: 0.75em; color: #eee; margin-top: 5px;">{next_text}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def draw_response_feedback(is_correct, text, is_selected=True):
-    """Disegna il box colorato con il feedback della risposta."""
+def load_css():
     st.markdown("""
     <style>
-    .res-box {
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: white;
-        display: flex;
-        align-items: center;
-        font-family: sans-serif;
-    }
-    .res-correct { background-color: rgba(76, 175, 80, 0.9); border: 2px solid #2E7D32; }
-    .res-wrong { background-color: rgba(244, 67, 54, 0.9); border: 2px solid #C62828; }
-    .res-neutral { background-color: rgba(158, 158, 158, 0.8); border: 2px solid #616161; color: #EEE; }
+        .block-container { padding-top: 1rem !important; }
+        
+        /* TESTI PIÙ LEGGIBILI */
+        .stRadio label, .stMarkdown p, .stText, h1, h2, h3, li { 
+            color: #000000 !important; 
+            font-weight: 500; 
+            font-size: 1.1rem !important;
+        }
+
+        /* BOTTONI "POLLICIONE" (MOBILE FRIENDLY) */
+        div.stButton > button { 
+            width: 100%;             /* Occupa tutta la larghezza */
+            min-height: 60px;        /* Molto più alti */
+            font-size: 18px !important; /* Testo più grande */
+            border-radius: 12px; 
+            margin-bottom: 8px; 
+            background-color: #ffffff !important; 
+            border: 2px solid #ced4da !important; 
+            color: #212529 !important; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            transition: all 0.2s;
+        }
+        div.stButton > button:active { transform: scale(0.98); }
+        
+        /* Bottoni speciali (Primary) */
+        div.stButton > button[kind="primary"] { 
+            background-color: #0d6efd !important; 
+            color: white !important; 
+            border: none !important; 
+            font-weight: bold !important; 
+        }
+
+        /* CARD DOMANDA */
+        .question-box { 
+            background-color: rgba(255, 255, 255, 0.95); 
+            padding: 25px; 
+            border-radius: 15px; 
+            border-left: 8px solid #1565c0; 
+            margin-bottom: 25px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
+        }
+        .question-header { 
+            display: flex; justify-content: space-between; margin-bottom: 15px; 
+            border-bottom: 1px solid #ddd; padding-bottom: 5px; 
+            font-size: 0.9rem; color: #666;
+        }
+        .question-id { font-weight: 900; color: #1565c0; }
+        .question-text { font-size: 22px; line-height: 1.4; font-weight: 700; color: #2c3e50; }
+
+        /* DASHBOARD */
+        .rank-box { background: linear-gradient(135deg, #0061f2 0%, #00c6f7 100%); padding: 15px; border-radius: 8px; color: white; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .metric-container { display: flex; justify-content: space-between; background-color: rgba(255,255,255,0.9); padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .metric-box { text-align: center; width: 33%; font-weight: bold; }
+        .footer-sidebar { font-size: 11px; text-align: center; margin-top: 30px; opacity: 0.7; }
+        
+        /* RISULTATI */
+        .res-box { padding: 15px; border-radius: 10px; margin-bottom: 8px; font-weight: 600; font-size: 18px; border: 1px solid rgba(0,0,0,0.1); }
+        .res-correct { background-color: #d1e7dd; color: #0f5132; border-color: #badbcc; }
+        .res-wrong { background-color: #f8d7da; color: #842029; border-color: #f5c2c7; text-decoration: line-through; opacity: 0.8; }
+        .res-neutral { background-color: #f8f9fa; color: #6c757d; border-color: #dee2e6; opacity: 0.6; }
+        
     </style>
     """, unsafe_allow_html=True)
 
-    style = ""
-    icon = ""
+def draw_question_card(id_prog, argomento, voce, testo):
+    st.markdown(f'<div class="question-box"><div class="question-header"><span class="question-id">#{id_prog}</span><span>{argomento}</span></div><div class="question-text">{testo}</div></div>', unsafe_allow_html=True)
 
-    if is_selected:
-        if is_correct:
-            style = "res-correct"
-            icon = "✅"
-        else:
-            style = "res-wrong"
-            icon = "❌"
+def draw_rank_box(rank_name, current, target):
+    st.markdown(f'<div class="rank-box"><div class="rank-title">GRADO</div><div class="rank-name">{rank_name}</div><div>{current} / {target} XP</div></div>', unsafe_allow_html=True)
+
+# NUOVA FUNZIONE PER I RISULTATI COLORATI
+def draw_result_option(text, is_correct, user_selected_this, user_answered_correctly):
+    """Disegna il box colorato dopo la risposta."""
+    if is_correct:
+        # È la risposta giusta: SEMPRE VERDE
+        style = "res-correct"
+        icon = "✅"
+    elif user_selected_this and not is_correct:
+        # L'utente ha cliccato questa ed era sbagliata: ROSSA
+        style = "res-wrong"
+        icon = "❌"
     else:
-        if is_correct: 
-            style = "res-neutral"
-            icon = "👉" 
-        else:
-            style = "res-neutral"
-            icon = "⚪"
+        # Risposta sbagliata non cliccata: GRIGIA/NEUTRA
+        style = "res-neutral"
+        icon = "⚪"
         
-    st.markdown(f'<div class="res-box {style}">{icon}&nbsp;&nbsp;{text}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="res-box {style}">{icon} {text}</div>', unsafe_allow_html=True)
 
 def draw_stats_dashboard_advanced(df_stats):
-    """Visualizza le metriche dell'utente."""
     st.markdown("## 📊 Il Tuo Libretto")
-    
-    if df_stats is None or df_stats.empty:
+    if df_stats.empty:
         st.info("Fai qualche quiz per vedere i dati.")
         return
 
     tot = df_stats['Totali'].sum()
     svolte = df_stats['Svolte'].sum()
     giuste = df_stats['Giuste'].sum()
-    
     prec = (giuste / svolte * 100) if svolte > 0 else 0
-    avanzamento = int(svolte / tot * 100) if tot > 0 else 0
     
     c1, c2, c3 = st.columns(3)
-    c1.metric("Avanzamento", f"{avanzamento}%", f"{svolte}/{tot}")
+    c1.metric("Avanzamento", f"{int(svolte/tot*100)}%", f"{svolte}/{tot}")
     c2.metric("Precisione", f"{prec:.0f}%")
     
-    df_active = df_stats[df_stats['Svolte'] > 0].copy()
-    
-    if not df_active.empty and '% Precisione' in df_active.columns:
-        weakest = df_active.sort_values(by='% Precisione', ascending=True).iloc[0]
-        arg_name = weakest['Argomento']
-        if len(arg_name) > 15: arg_name = arg_name[:12] + "..."
-        c3.metric("Da Ripassare", arg_name, f"{weakest['% Precisione']:.0f}%")
-    else:
-        c3.metric("Stato", "Ottimo!", "Continua così")
+    # Punto debole
+    df_active = df_stats[df_stats['Svolte'] > 0]
+    if not df_active.empty:
+        weakest = df_active.sort_values(by='% Precisione').iloc[0]
+        c3.metric("Ripassa:", weakest['Argomento'], f"{weakest['% Precisione']}%", delta_color="inverse")
+    else: c3.metric("Ripassa:", "-")
+
+    st.markdown("---")
+    st.subheader("📝 Dettaglio per Materia")
+    st.dataframe(
+        df_stats[['Argomento', 'Svolte', 'Giuste', 'Sbagliate']],
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "Giuste": st.column_config.NumberColumn("✅", format="%d"),
+            "Sbagliate": st.column_config.NumberColumn("❌", format="%d")
+        }
+    )
