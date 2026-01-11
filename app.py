@@ -1,5 +1,5 @@
 # FILE: app.py
-# VERSION: v102.0 (Welcome Text Update)
+# VERSION: v110.0 (FIX: Spaziatura Header & Cronometro Iframe Style)
 # DATE: 2026-01-11
 
 import streamlit as st
@@ -45,7 +45,37 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* STILE MESSAGGIO INGRESSO */
+    /* --- BARRA DI STATO (SPAZIATA CORRETTAMENTE) --- */
+    .status-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 8px 20px; 
+        margin-top: 10px;    /* SPAZIO DAL TITOLO SOPRA */
+        margin-bottom: 20px; /* SPAZIO DAL CONTENUTO SOTTO */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .status-item {
+        text-align: center;
+        font-family: sans-serif;
+        line-height: 1.1;
+    }
+    .status-label {
+        font-size: 0.75em;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .status-value {
+        font-size: 1.2em;
+        font-weight: 800;
+        color: #333;
+    }
+
+    /* --- STILE PAGINA BENVENUTO --- */
     .login-warning {
         padding: 2rem;
         background-color: transparent;
@@ -53,15 +83,20 @@ st.markdown("""
         margin-top: 50px;
     }
     .welcome-title {
-        font-size: 3.5rem; font-weight: 800; color: #003366;
-        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8); margin-bottom: 20px;
+        font-size: 3.5rem; 
+        font-weight: 800; 
+        color: #003366;
+        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8); 
+        margin-bottom: 20px;
     }
     .welcome-text {
-        font-size: 1.5rem; color: #333; font-weight: bold;
+        font-size: 1.5rem; 
+        color: #333; 
+        font-weight: bold;
         text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
         line-height: 1.8;
     }
-    
+
     /* LINK GOOGLE */
     .google-link {
         text-align: right; 
@@ -97,7 +132,7 @@ FILE_RACCORDO_P = os.path.join(BASE_DIR, "Raccordoimmagini.parquet")
 FILE_RACCORDO_X = os.path.join(BASE_DIR, "Raccordoimmagini.xlsx")
 CARTELLA_IMMAGINI = os.path.join(BASE_DIR, "Immagini_Quiz")
 
-# Carichiamo stili UI
+# UI SETUP
 ui.set_backgrounds(os.path.join(BASE_DIR, "background.jpg"), os.path.join(BASE_DIR, "background2.jpg"))
 ui.load_css()
 
@@ -125,24 +160,28 @@ if 'init' not in st.session_state:
     st.session_state.history = {str(k).replace('.0','').strip(): v for k, v in raw_hist.items()}
     st.session_state.init = True
 
-# --- CARICAMENTO DATI ---
-def smart_load(path_parquet, path_excel):
-    if os.path.exists(path_parquet): return pd.read_parquet(path_parquet)
-    elif os.path.exists(path_excel): return pd.read_excel(path_excel)
-    return None
-
-@st.cache_data(show_spinner=False)
-def load_raccordo_map():
-    try:
-        df = smart_load(FILE_RACCORDO_P, FILE_RACCORDO_X)
-        if df is None: return {}
-        df.columns = [str(c).strip() for c in df.columns]
-        col_id = 'ID Progressivo' if 'ID Progressivo' in df.columns else ('Progressivo' if 'Progressivo' in df.columns else None)
-        col_img = 'Immagine' if 'Immagine' in df.columns else None
-        if col_id and col_img:
-            return dict(zip(df[col_id].astype(str).str.replace(r'\.0$', '', regex=True).str.strip(), df[col_img].astype(str).str.strip()))
-    except: return {}
-    return {}
+# --- LOGICA CARICAMENTO ---
+if hasattr(brain, 'smart_load_data'):
+    def load_data(mode):
+        if "Vela" in mode: return brain.smart_load_data(FILE_QUIZ_VELA_P, FILE_QUIZ_VELA_X)
+        return brain.smart_load_data(FILE_QUIZ_BASE_P, FILE_QUIZ_BASE_X)
+    
+    def load_raccordo_map():
+        df = brain.smart_load_data(FILE_RACCORDO_P, FILE_RACCORDO_X)
+        if df.empty: return {}
+        try:
+            col_id = 'ID Progressivo' if 'ID Progressivo' in df.columns else ('Progressivo' if 'Progressivo' in df.columns else None)
+            col_img = 'Immagine' if 'Immagine' in df.columns else None
+            if col_id and col_img:
+                return dict(zip(df[col_id].astype(str).str.replace(r'\.0$', '', regex=True).str.strip(), df[col_img].astype(str).str.strip()))
+        except: pass
+        return {}
+else:
+    def load_data(mode):
+        path = FILE_QUIZ_VELA_X if "Vela" in mode else FILE_QUIZ_BASE_X
+        if os.path.exists(path): return pd.read_excel(path).fillna("").astype(str)
+        return pd.DataFrame()
+    def load_raccordo_map(): return {}
 
 def get_image_path_for_question(question_id):
     if not question_id: return None
@@ -157,22 +196,7 @@ def get_image_path_for_question(question_id):
         if os.path.splitext(f)[0].lower() == name_no_ext: return os.path.join(CARTELLA_IMMAGINI, f)
     return None
 
-@st.cache_data
-def load_data(mode):
-    if "Vela" in mode: df = smart_load(FILE_QUIZ_VELA_P, FILE_QUIZ_VELA_X)
-    else: df = smart_load(FILE_QUIZ_BASE_P, FILE_QUIZ_BASE_X)
-    if df is None: return None
-    try:
-        df.columns = [str(c).strip() for c in df.columns]
-        if 'ID Progressivo' in df.columns: 
-            df['ID Progressivo'] = df['ID Progressivo'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-        if 'Spiegazione' not in df.columns: df['Spiegazione'] = ""
-        else: df['Spiegazione'] = df['Spiegazione'].fillna("").astype(str)
-        return df
-    except Exception as e:
-        st.error(f"Errore lettura DB: {e}"); return None
-
-# --- LOGICA ---
+# --- FUNZIONI QUIZ ---
 def get_user_rank(mastered_count):
     if mastered_count < 100: return "🧹 Mozzo", 100
     if mastered_count < 300: return "⚓ Marinaio", 300
@@ -208,7 +232,7 @@ def reset_game(exam=False, review=False, stats=False):
         st.session_state.end_timestamp = 0
 
     db = load_data(st.session_state.quiz_mode)
-    if db is None: return
+    if db.empty: st.error("Database vuoto o non trovato."); return
 
     if not stats:
         if review:
@@ -236,14 +260,14 @@ def prepare_options():
     if row is not None:
         if "Vela" in st.session_state.quiz_mode:
             raw_ans = str(row.get('Risposta Esatta', '')).strip().upper()
-            is_vero = (raw_ans == 'V' or raw_ans == 'VERO' or raw_ans == 'TRUE')
+            is_vero = (raw_ans == 'A' or raw_ans == 'V' or raw_ans == 'VERO' or raw_ans == 'TRUE')
             st.session_state.shuffled_options = [{'txt': 'VERO', 'ok': is_vero}, {'txt': 'FALSO', 'ok': not is_vero}]
         else:
             corretta = str(row.get('Risposta Esatta','')).strip().upper()
             opts = [{'txt': row.get('Risposta A'), 'ok': corretta=='A'},
                     {'txt': row.get('Risposta B'), 'ok': corretta=='B'},
                     {'txt': row.get('Risposta C'), 'ok': corretta=='C'}]
-            st.session_state.shuffled_options = [o for o in opts if pd.notna(o['txt'])]
+            st.session_state.shuffled_options = [o for o in opts if pd.notna(o['txt']) and str(o['txt']).strip() != '']
             random.shuffle(st.session_state.shuffled_options)
 
 def answer(is_correct, selected_idx):
@@ -328,7 +352,7 @@ with st.sidebar:
         st.button("♾️ ALLENAMENTO SMART", use_container_width=True, on_click=reset_game, kwargs={'exam': False})
         
         db = load_data(st.session_state.quiz_mode)
-        if db is not None:
+        if not db.empty:
             curr_ids = set(db['ID Progressivo'].astype(str))
             errs = 0
             for k, v in st.session_state.history.items():
@@ -353,8 +377,6 @@ with st.sidebar:
         Algoritmo SRS: Ripropone le domande che sbagli finché non le impari.
         """)
     
-    # --- SEGNALAZIONE ERRORE NELLA SIDEBAR ---
-    # Appare solo se l'utente sta vedendo una domanda
     if st.session_state.current_row is not None and st.session_state.current_user != "Comandante":
         st.write("---")
         with st.expander("🚩 Segnala Errore Quiz"):
@@ -368,10 +390,10 @@ with st.sidebar:
                 else:
                     st.warning("Scrivi un messaggio.")
 
-    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v102.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v110.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
 
 
-# --- GATEKEEPER (PAGINA DI BENVENUTO) ---
+# --- GATEKEEPER ---
 if st.session_state.current_user == "Comandante":
     st.markdown("""
     <div class='login-warning'>
@@ -397,25 +419,82 @@ if st.session_state.stats_mode:
     if st.button("⬅️ Torna ai Quiz", type="primary"): st.session_state.stats_mode = False; st.rerun()
 
 else:
-    # HEADER
+    # HEADER (TITOLO + TIMER)
     if st.session_state.exam_mode:
         c_head, c_time = st.columns([3, 1])
-        with c_head: st.markdown(f"# 🎓 {st.session_state.quiz_mode} - SIMULAZIONE ESAME")
+        with c_head: 
+            # Titolo H3 pulito
+            st.markdown(f"<h3 style='margin-top:0; margin-bottom:5px;'>🎓 {st.session_state.quiz_mode} - SIMULAZIONE ESAME</h3>", unsafe_allow_html=True)
         with c_time:
             if st.session_state.end_timestamp > 0 and not st.session_state.exam_finished:
                 end_js = int(st.session_state.end_timestamp * 1000)
-                timer_html = f"""<div style="font-family: monospace; display: flex; justify-content: center; align-items: center; background: #fffbf0; padding: 5px 10px; border-radius: 8px; border: 2px solid #ff9800; box-shadow: 0px 2px 4px rgba(0,0,0,0.1); width: 100%;"><div style="margin-right:10px; font-weight:bold; font-size:0.9em; color:#555;">⏱️</div><div id="cnt" style="color:#d32f2f; font-weight:bold; font-size:1.2em;">--:--</div></div><script>setInterval(function(){{var dist={end_js}-new Date().getTime(); if(dist<0) document.getElementById("cnt").innerHTML="SCADUTO"; else {{ var m=Math.floor((dist%(1000*60*60))/(1000*60)); var s=Math.floor((dist%(1000*60))/1000); document.getElementById("cnt").innerHTML=(m<10?"0"+m:m)+":"+(s<10?"0"+s:s); }} }}, 1000);</script>"""
-                components.html(timer_html, height=50)
+                
+                # --- FIX CRONOMETRO: CSS INLINE PERCHE' DENTRO IFRAME ---
+                # Il bordo e lo stile ora sono definiti DENTRO l'HTML del componente
+                timer_html = f"""
+                <style>
+                    body {{ margin: 0; padding: 0; display:flex; justify-content:center; }}
+                    .timer-box {{
+                        font-family: monospace; 
+                        display: flex; 
+                        justify-content: center; 
+                        align-items: center; 
+                        background: #fffbf0; 
+                        padding: 8px 15px; 
+                        border-radius: 8px; 
+                        border: 2px solid #ff9800; 
+                        width: 95%;
+                        box-sizing: border-box;
+                        white-space: nowrap;
+                        color: #d32f2f;
+                        font-weight: bold;
+                        font-size: 1.2em;
+                    }}
+                </style>
+                <div class="timer-box">
+                    <span style="margin-right:8px; font-size:0.9em; color:#555;">⏱️</span>
+                    <span id="cnt">--:--</span>
+                </div>
+                <script>
+                setInterval(function(){{
+                    var dist={end_js}-new Date().getTime(); 
+                    if(dist<0) document.getElementById("cnt").innerHTML="SCADUTO"; 
+                    else {{ 
+                        var m=Math.floor((dist%(1000*60*60))/(1000*60)); 
+                        var s=Math.floor((dist%(1000*60))/1000); 
+                        document.getElementById("cnt").innerHTML=(m<10?"0"+m:m)+":"+(s<10?"0"+s:s); 
+                    }} 
+                }}, 1000);
+                </script>
+                """
+                components.html(timer_html, height=70)
                 if time.time() > (st.session_state.end_timestamp + 2): finalize_exam(); st.rerun()
     else:
         t_suffix = "Ripasso" if st.session_state.review_mode else "Allenamento"
         st.markdown(f"## {icon} {st.session_state.quiz_mode} - *{t_suffix}*")
     
-    # METRICHE
+    # METRICHE (BARRA CON SPAZIO AGGIUNTIVO)
     if not st.session_state.exam_finished:
         done = st.session_state.score_ok + st.session_state.score_ko
         tot = len(st.session_state.exam_questions)
-        st.markdown(f'<div class="metric-container"><div class="metric-box"><div>Fatte</div><div>{done}/{tot}</div></div><div class="metric-box"><div>Esatte</div><div style="color:green">{st.session_state.score_ok}</div></div><div class="metric-box"><div>Errori</div><div style="color:red">{st.session_state.score_ko}</div></div></div>', unsafe_allow_html=True)
+        
+        st.markdown(f"""
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">Fatte</div>
+                <div class="status-value">{done}/{tot}</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Esatte</div>
+                <div class="status-value" style="color:#2e7d32;">{st.session_state.score_ok}</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Errori</div>
+                <div class="status-value" style="color:#c62828;">{st.session_state.score_ko}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
         if tot > 0: st.progress(done/tot)
     
     # SCHERMATA FINE ESAME
