@@ -1,5 +1,5 @@
 # FILE: app.py
-# VERSION: v110.0 (FIX: Spaziatura Header & Cronometro Iframe Style)
+# VERSION: v112.0 (FIX: Sidebar Toggle Visible on Tablet)
 # DATE: 2026-01-11
 
 import streamlit as st
@@ -18,16 +18,26 @@ import logic as brain
 import ui 
 
 # --- CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Patente Nautica", page_icon="⚓", layout="wide")
+# initial_sidebar_state="expanded" aiuta sui tablet grandi a tenerla aperta se c'è spazio
+st.set_page_config(page_title="Patente Nautica", page_icon="⚓", layout="wide", initial_sidebar_state="expanded")
 
 # --- CSS PERSONALIZZATO ---
 st.markdown("""
 <style>
+    /* NASCONDE MENU STREAMLIT MA TIENE VISIBILE IL PULSANTE SIDEBAR */
     #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
     footer {visibility: hidden;}
     .stDeployButton {display:none;}
     
+    /* FIX CRUCIALE TABLET: */
+    /* Non nascondiamo più l'header intero, altrimenti sparisce il bottone per aprire la sidebar! */
+    /* Lo rendiamo trasparente e pulito. */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        z-index: 999; /* Assicura che il bottone sia cliccabile */
+    }
+    
+    /* STILI BARRE E COLORI */
     .stProgress > div > div > div > div {
         background-image: linear-gradient(to right, #4caf50, #8bc34a);
     }
@@ -45,7 +55,7 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* --- BARRA DI STATO (SPAZIATA CORRETTAMENTE) --- */
+    /* --- BARRA DI STATO --- */
     .status-bar {
         display: flex;
         justify-content: space-between;
@@ -54,8 +64,8 @@ st.markdown("""
         border: 1px solid #e0e0e0;
         border-radius: 12px;
         padding: 8px 20px; 
-        margin-top: 10px;    /* SPAZIO DAL TITOLO SOPRA */
-        margin-bottom: 20px; /* SPAZIO DAL CONTENUTO SOTTO */
+        margin-top: 10px;    
+        margin-bottom: 20px; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .status-item {
@@ -390,7 +400,7 @@ with st.sidebar:
                 else:
                     st.warning("Scrivi un messaggio.")
 
-    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v110.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v112.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
 
 
 # --- GATEKEEPER ---
@@ -423,14 +433,10 @@ else:
     if st.session_state.exam_mode:
         c_head, c_time = st.columns([3, 1])
         with c_head: 
-            # Titolo H3 pulito
             st.markdown(f"<h3 style='margin-top:0; margin-bottom:5px;'>🎓 {st.session_state.quiz_mode} - SIMULAZIONE ESAME</h3>", unsafe_allow_html=True)
         with c_time:
             if st.session_state.end_timestamp > 0 and not st.session_state.exam_finished:
                 end_js = int(st.session_state.end_timestamp * 1000)
-                
-                # --- FIX CRONOMETRO: CSS INLINE PERCHE' DENTRO IFRAME ---
-                # Il bordo e lo stile ora sono definiti DENTRO l'HTML del componente
                 timer_html = f"""
                 <style>
                     body {{ margin: 0; padding: 0; display:flex; justify-content:center; }}
@@ -473,7 +479,7 @@ else:
         t_suffix = "Ripasso" if st.session_state.review_mode else "Allenamento"
         st.markdown(f"## {icon} {st.session_state.quiz_mode} - *{t_suffix}*")
     
-    # METRICHE (BARRA CON SPAZIO AGGIUNTIVO)
+    # METRICHE
     if not st.session_state.exam_finished:
         done = st.session_state.score_ok + st.session_state.score_ko
         tot = len(st.session_state.exam_questions)
