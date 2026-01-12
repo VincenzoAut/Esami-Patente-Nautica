@@ -230,3 +230,34 @@ def calculate_topic_stats(full_db, user_history):
         })
         
     return pd.DataFrame(stats_data).sort_values(by="% Completamento", ascending=False)
+
+# FILE: logic.py
+import streamlit as st
+import database as db_engine # Assicurati che l'import sia corretto nel tuo logic.py
+
+def initialize_app_state():
+    """Inizializza tutte le variabili di sessione necessarie."""
+    if 'init' not in st.session_state:
+        st.session_state.current_user = "Comandante"
+        st.session_state.quiz_mode = "Quiz Base"
+        st.session_state.exam_mode = False
+        st.session_state.review_mode = False
+        st.session_state.stats_mode = False
+        st.session_state.score_ok = 0
+        st.session_state.score_ko = 0
+        st.session_state.exam_index = 0
+        st.session_state.exam_questions = []
+        st.session_state.current_row = None
+        st.session_state.answered = False
+        st.session_state.last_answer_correct = False 
+        st.session_state.selected_option_index = -1 
+        st.session_state.shuffled_options = []
+        st.session_state.end_timestamp = 0 
+        st.session_state.start_time = 0     
+        st.session_state.exam_finished = False
+        
+        # Caricamento storico iniziale
+        raw_hist = db_engine.fetch_user_history("Comandante")
+        st.session_state.history = {str(k).replace('.0','').strip(): v for k, v in raw_hist.items()}
+        
+        st.session_state.init = True

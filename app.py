@@ -1,9 +1,8 @@
 # FILE: app.py
-# VERSION: v112.0 (FIX: Sidebar Toggle Visible on Tablet)
-# DATE: 2026-01-11
+# VERSION: v119.0 (UX: Instant Start on Topic Selection)
+# DATE: 2026-01-12
 
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import os
 import time
@@ -12,125 +11,13 @@ import random
 import urllib.parse
 from PIL import Image
 
-# Import moduli
+# Import moduli personalizzati
 import database as db_engine
 import logic as brain
 import ui 
 
 # --- CONFIGURAZIONE PAGINA ---
-# initial_sidebar_state="expanded" aiuta sui tablet grandi a tenerla aperta se c'è spazio
 st.set_page_config(page_title="Patente Nautica", page_icon="⚓", layout="wide", initial_sidebar_state="expanded")
-
-# --- CSS PERSONALIZZATO ---
-st.markdown("""
-<style>
-    /* NASCONDE MENU STREAMLIT MA TIENE VISIBILE IL PULSANTE SIDEBAR */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display:none;}
-    
-    /* FIX CRUCIALE TABLET: */
-    /* Non nascondiamo più l'header intero, altrimenti sparisce il bottone per aprire la sidebar! */
-    /* Lo rendiamo trasparente e pulito. */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-        z-index: 999; /* Assicura che il bottone sia cliccabile */
-    }
-    
-    /* STILI BARRE E COLORI */
-    .stProgress > div > div > div > div {
-        background-image: linear-gradient(to right, #4caf50, #8bc34a);
-    }
-    
-    .credits-box {
-        font-size: 0.75em;
-        color: #888;
-        text-align: center;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #eee;
-    }
-
-    div.row-widget.stButton > button {
-        font-weight: bold;
-    }
-    
-    /* --- BARRA DI STATO --- */
-    .status-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 8px 20px; 
-        margin-top: 10px;    
-        margin-bottom: 20px; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .status-item {
-        text-align: center;
-        font-family: sans-serif;
-        line-height: 1.1;
-    }
-    .status-label {
-        font-size: 0.75em;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .status-value {
-        font-size: 1.2em;
-        font-weight: 800;
-        color: #333;
-    }
-
-    /* --- STILE PAGINA BENVENUTO --- */
-    .login-warning {
-        padding: 2rem;
-        background-color: transparent;
-        text-align: center;
-        margin-top: 50px;
-    }
-    .welcome-title {
-        font-size: 3.5rem; 
-        font-weight: 800; 
-        color: #003366;
-        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8); 
-        margin-bottom: 20px;
-    }
-    .welcome-text {
-        font-size: 1.5rem; 
-        color: #333; 
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
-        line-height: 1.8;
-    }
-
-    /* LINK GOOGLE */
-    .google-link {
-        text-align: right; 
-        margin-top: 15px; 
-        margin-bottom: 10px;
-    }
-    .google-link a {
-        text-decoration: none; 
-        color: #333; 
-        background-color: #f8f9fa;
-        border: 1px solid #ccc; 
-        padding: 8px 15px; 
-        border-radius: 20px; 
-        font-weight: bold;
-        font-size: 0.9em;
-        transition: all 0.3s;
-    }
-    .google-link a:hover {
-        background-color: #e3f2fd;
-        border-color: #2196f3;
-        color: #0d47a1;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # --- PERCORSI FILE ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -141,36 +28,23 @@ FILE_QUIZ_VELA_X = os.path.join(BASE_DIR, "Quiz_Patente_Vela_Finale_OK.xlsx")
 FILE_RACCORDO_P = os.path.join(BASE_DIR, "Raccordoimmagini.parquet")
 FILE_RACCORDO_X = os.path.join(BASE_DIR, "Raccordoimmagini.xlsx")
 CARTELLA_IMMAGINI = os.path.join(BASE_DIR, "Immagini_Quiz")
+CSS_FILE = os.path.join(BASE_DIR, "style.css")
+
+# --- FUNZIONE CARICAMENTO CSS ---
+def local_css(file_name):
+    if os.path.exists(file_name):
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # UI SETUP
+local_css(CSS_FILE)
 ui.set_backgrounds(os.path.join(BASE_DIR, "background.jpg"), os.path.join(BASE_DIR, "background2.jpg"))
 ui.load_css()
 
 # --- GESTIONE STATO ---
-if 'init' not in st.session_state:
-    st.session_state.current_user = "Comandante"
-    st.session_state.quiz_mode = "Quiz Base"
-    st.session_state.exam_mode = False
-    st.session_state.review_mode = False
-    st.session_state.stats_mode = False
-    st.session_state.score_ok = 0
-    st.session_state.score_ko = 0
-    st.session_state.exam_index = 0
-    st.session_state.exam_questions = []
-    st.session_state.current_row = None
-    st.session_state.answered = False
-    st.session_state.last_answer_correct = False 
-    st.session_state.selected_option_index = -1 
-    st.session_state.shuffled_options = []
-    st.session_state.end_timestamp = 0 
-    st.session_state.start_time = 0     
-    st.session_state.exam_finished = False
-    
-    raw_hist = db_engine.fetch_user_history("Comandante")
-    st.session_state.history = {str(k).replace('.0','').strip(): v for k, v in raw_hist.items()}
-    st.session_state.init = True
+brain.initialize_app_state()
 
-# --- LOGICA CARICAMENTO ---
+# --- LOGICA CARICAMENTO DATI ---
 if hasattr(brain, 'smart_load_data'):
     def load_data(mode):
         if "Vela" in mode: return brain.smart_load_data(FILE_QUIZ_VELA_P, FILE_QUIZ_VELA_X)
@@ -206,7 +80,7 @@ def get_image_path_for_question(question_id):
         if os.path.splitext(f)[0].lower() == name_no_ext: return os.path.join(CARTELLA_IMMAGINI, f)
     return None
 
-# --- FUNZIONI QUIZ ---
+# --- FUNZIONI QUIZ E RESET ---
 def get_user_rank(mastered_count):
     if mastered_count < 100: return "🧹 Mozzo", 100
     if mastered_count < 300: return "⚓ Marinaio", 300
@@ -221,7 +95,15 @@ def check_time_limit():
         if time.time() > (st.session_state.end_timestamp + 2): finalize_exam(); return False
     return True
 
-def reset_game(exam=False, review=False, stats=False):
+# --- NUOVA CALLBACK: AVVIO DIRETTO AL CAMBIO FILTRO ---
+def start_filtered_training():
+    """Avvia direttamente l'allenamento quando cambia il filtro nel menu a tendina."""
+    # Recupera il valore appena selezionato dallo stato
+    selected = st.session_state.topic_filter
+    # Avvia il reset del gioco passando il topic
+    reset_game(exam=False, topic=selected)
+
+def reset_game(exam=False, review=False, stats=False, topic=None):
     st.session_state.exam_mode = exam
     st.session_state.review_mode = review
     st.session_state.stats_mode = stats
@@ -232,6 +114,7 @@ def reset_game(exam=False, review=False, stats=False):
     st.session_state.exam_finished = False
     st.session_state.exam_questions = [] 
     st.session_state.start_time = time.time()
+    st.session_state.total_pending_errors = 0 
     
     duration = 0
     if exam:
@@ -246,9 +129,20 @@ def reset_game(exam=False, review=False, stats=False):
 
     if not stats:
         if review:
+            curr_ids = set(db['ID Progressivo'].astype(str))
+            total_errs = 0
+            for k, v in st.session_state.history.items():
+                if v['score'] == -1 and str(k).replace('.0','').strip() in curr_ids:
+                    total_errs += 1
+            st.session_state.total_pending_errors = total_errs
+
             subset = brain.get_next_session_questions(db, st.session_state.history, mode="Ripasso")
-            if len(subset) == 0: st.success("🎉 Nessun errore da ripassare!"); st.session_state.review_mode = False; return
+            if len(subset) == 0: 
+                st.success("🎉 Nessun errore da ripassare!"); 
+                st.session_state.review_mode = False; 
+                return
             st.session_state.exam_questions = subset.to_dict('records'); load_question()
+        
         elif exam:
             if "Vela" in st.session_state.quiz_mode: 
                 st.session_state.exam_questions = db.sample(min(5, len(db))).to_dict('records')
@@ -256,6 +150,13 @@ def reset_game(exam=False, review=False, stats=False):
                 st.session_state.exam_questions = brain.get_balanced_exam_questions(db).to_dict('records')
             load_question()
         else:
+            # ALLENAMENTO CON FILTRO
+            if topic and topic != "Tutti gli argomenti" and "Argomento" in db.columns:
+                db = db[db['Argomento'] == topic]
+                if db.empty:
+                    st.warning(f"Nessuna domanda trovata per l'argomento: {topic}")
+                    return
+
             subset = brain.get_next_session_questions(db, st.session_state.history, mode="Allenamento")
             st.session_state.exam_questions = subset.to_dict('records'); load_question()
 
@@ -310,7 +211,7 @@ def next_question():
         st.session_state.exam_index += 1; load_question()
     else: finalize_exam()
 
-# --- SIDEBAR (LOGIN) ---
+# --- SIDEBAR (LOGIN & MENU) ---
 with st.sidebar:
     st.title("⚓ Patente Nautica")
     
@@ -330,11 +231,20 @@ with st.sidebar:
             if len(nome_clean) < 3:
                 st.toast("❌ Nome troppo corto!", icon="⚠️")
             else:
+                # 1. SETTAGGIO UTENTE E STORICO
                 st.session_state.current_user = nome_clean
                 st.toast(f"Bentornato, {nome_clean.title()}!")
                 raw_hist = db_engine.fetch_user_history(nome_clean)
                 st.session_state.history = {str(k).replace('.0','').strip(): v for k, v in raw_hist.items()}
-                st.session_state.exam_mode = False; st.session_state.review_mode = False; st.session_state.stats_mode = False
+                
+                # 2. AVVIO DIRETTO SIMULAZIONE ESAME BASE
+                st.session_state.quiz_mode = "Quiz Base"
+                st.session_state.exam_mode = True # Forza modalità Esame
+                st.session_state.review_mode = False
+                st.session_state.stats_mode = False
+                
+                # 3. CARICAMENTO DOMANDE ESAME
+                reset_game(exam=True)
                 st.rerun()
                 
     else:
@@ -353,23 +263,55 @@ with st.sidebar:
         st.write("---")
         st.markdown("**📚 Materia:**")
         mode = st.radio("Seleziona:", ["Quiz Base", "Quiz Vela"], label_visibility="collapsed")
+        
         if mode != st.session_state.quiz_mode:
             st.session_state.quiz_mode = mode; st.session_state.current_row = None
             st.session_state.exam_questions = []; st.session_state.exam_mode = False; st.session_state.stats_mode = False; st.rerun()
 
         st.write("---")
+        
+        # --- SELETTORE ARGOMENTO (VISIBILE SOLO IN ALLENAMENTO BASE) ---
+        # Nascondiamo se stiamo facendo l'esame (exam_mode=True)
+        selected_topic = "Tutti gli argomenti" 
+        
+        if "Base" in st.session_state.quiz_mode and not st.session_state.exam_mode:
+            db_temp = load_data("Quiz Base")
+            if not db_temp.empty and 'Argomento' in db_temp.columns:
+                topics_list = sorted(db_temp['Argomento'].unique().astype(str))
+                options = ["Tutti gli argomenti"] + topics_list
+                
+                if 'topic_filter' not in st.session_state:
+                    st.session_state.topic_filter = "Tutti gli argomenti"
+                
+                # QUI C'È LA MAGIA: on_change=start_filtered_training
+                # Appena cambi, parte il quiz su quell'argomento
+                selected_topic = st.selectbox(
+                    "🎯 Filtra Argomento:", 
+                    options, 
+                    key="topic_filter",
+                    on_change=start_filtered_training 
+                )
+        
         st.button("🎓 SIMULAZIONE ESAME", type="primary", use_container_width=True, on_click=reset_game, kwargs={'exam': True})
-        st.button("♾️ ALLENAMENTO SMART", use_container_width=True, on_click=reset_game, kwargs={'exam': False})
+        
+        # Il pulsante rimane per chi vuole cliccare, ma il selectbox già avvia tutto.
+        st.button("♾️ ALLENAMENTO SMART", use_container_width=True, on_click=reset_game, kwargs={'exam': False, 'topic': selected_topic})
         
         db = load_data(st.session_state.quiz_mode)
         if not db.empty:
             curr_ids = set(db['ID Progressivo'].astype(str))
-            errs = 0
+            errs_count = 0
             for k, v in st.session_state.history.items():
-                if v['score'] == -1 and str(k).replace('.0','').strip() in curr_ids: errs += 1
-            if errs > 0: 
-                st.warning(f"⚠️ **{errs} Errori da rivedere**")
-                st.button("🔄 RIPASSA ERRORI", use_container_width=True, on_click=reset_game, kwargs={'review': True})
+                if v['score'] == -1 and str(k).replace('.0','').strip() in curr_ids: 
+                    errs_count += 1
+            
+            if errs_count > 0: 
+                st.warning(f"⚠️ **{errs_count} Errori in memoria**")
+                if st.button("🔄 RIPASSA ERRORI", use_container_width=True):
+                    reset_game(review=True)
+                    st.rerun()
+            else:
+                st.success("✅ Nessun errore in sospeso")
         
         st.button("📊 STATISTICHE", use_container_width=True, on_click=reset_game, kwargs={'stats': True})
     
@@ -400,7 +342,7 @@ with st.sidebar:
                 else:
                     st.warning("Scrivi un messaggio.")
 
-    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v112.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v119.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
 
 
 # --- GATEKEEPER ---
@@ -436,72 +378,39 @@ else:
             st.markdown(f"<h3 style='margin-top:0; margin-bottom:5px;'>🎓 {st.session_state.quiz_mode} - SIMULAZIONE ESAME</h3>", unsafe_allow_html=True)
         with c_time:
             if st.session_state.end_timestamp > 0 and not st.session_state.exam_finished:
-                end_js = int(st.session_state.end_timestamp * 1000)
-                timer_html = f"""
-                <style>
-                    body {{ margin: 0; padding: 0; display:flex; justify-content:center; }}
-                    .timer-box {{
-                        font-family: monospace; 
-                        display: flex; 
-                        justify-content: center; 
-                        align-items: center; 
-                        background: #fffbf0; 
-                        padding: 8px 15px; 
-                        border-radius: 8px; 
-                        border: 2px solid #ff9800; 
-                        width: 95%;
-                        box-sizing: border-box;
-                        white-space: nowrap;
-                        color: #d32f2f;
-                        font-weight: bold;
-                        font-size: 1.2em;
-                    }}
-                </style>
-                <div class="timer-box">
-                    <span style="margin-right:8px; font-size:0.9em; color:#555;">⏱️</span>
-                    <span id="cnt">--:--</span>
-                </div>
-                <script>
-                setInterval(function(){{
-                    var dist={end_js}-new Date().getTime(); 
-                    if(dist<0) document.getElementById("cnt").innerHTML="SCADUTO"; 
-                    else {{ 
-                        var m=Math.floor((dist%(1000*60*60))/(1000*60)); 
-                        var s=Math.floor((dist%(1000*60))/1000); 
-                        document.getElementById("cnt").innerHTML=(m<10?"0"+m:m)+":"+(s<10?"0"+s:s); 
-                    }} 
-                }}, 1000);
-                </script>
-                """
-                components.html(timer_html, height=70)
+                ui.display_exam_timer(st.session_state.end_timestamp)
                 if time.time() > (st.session_state.end_timestamp + 2): finalize_exam(); st.rerun()
     else:
         t_suffix = "Ripasso" if st.session_state.review_mode else "Allenamento"
         st.markdown(f"## {icon} {st.session_state.quiz_mode} - *{t_suffix}*")
     
-    # METRICHE
+    # METRICHE E STATUS BAR
     if not st.session_state.exam_finished:
         done = st.session_state.score_ok + st.session_state.score_ko
-        tot = len(st.session_state.exam_questions)
+        session_tot = len(st.session_state.exam_questions)
         
+        label_tot = f"{done}/{session_tot}"
+        if st.session_state.review_mode:
+            label_tot = f"{done} / {st.session_state.total_pending_errors}"
+
         st.markdown(f"""
         <div class="status-bar">
             <div class="status-item">
-                <div class="status-label">Fatte</div>
-                <div class="status-value">{done}/{tot}</div>
+                <div class="status-label">Avanzamento</div>
+                <div class="status-value">{label_tot}</div>
             </div>
             <div class="status-item">
                 <div class="status-label">Esatte</div>
                 <div class="status-value" style="color:#2e7d32;">{st.session_state.score_ok}</div>
             </div>
             <div class="status-item">
-                <div class="status-label">Errori</div>
+                <div class="status-label">Errori Sessione</div>
                 <div class="status-value" style="color:#c62828;">{st.session_state.score_ko}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        if tot > 0: st.progress(done/tot)
+        if session_tot > 0: st.progress(done / session_tot)
     
     # SCHERMATA FINE ESAME
     if st.session_state.exam_finished:
@@ -566,4 +475,7 @@ else:
                 with c_idk:
                     if st.button("🚩 Non la so!", use_container_width=True): answer(False, -1); st.rerun()
     
-    if st.session_state.current_row is None: reset_game(False); st.rerun()
+    if st.session_state.current_row is None: 
+        if not st.session_state.exam_finished and st.session_state.current_user != "Comandante":
+             # Non dovrebbe mai arrivare qui se l'autostart funziona, ma per sicurezza:
+             st.info("👈 Seleziona un argomento per iniziare.")
