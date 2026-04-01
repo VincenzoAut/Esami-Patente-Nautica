@@ -103,3 +103,32 @@ div.row-widget.stButton > button {
     border-color: #2196f3;
     color: #0d47a1;
 }
+/* =========================================
+   FIX LEGGIBILITÀ TABLET / MOBILE (SIDEBAR)
+   ========================================= */
+
+/* 1. Fix per i bottoni di scelta (Quiz Base / Vela) e Selettore Argomento */
+section[data-testid="stSidebar"] .stRadio p,
+section[data-testid="stSidebar"] .stSelectbox label p {
+    /* Forza il colore bianco con una forte ombra nera: leggibile su QUALSIASI sfondo */
+    color: #ffffff !important; 
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9) !important;
+    font-weight: 600 !important;
+    font-size: 1.05em !important;
+}
+
+/* 2. Fix per il riquadro "Errori in memoria" (e altri Alert) */
+section[data-testid="stSidebar"] div[data-testid="stAlert"] {
+    /* Diamo un colore di sfondo solido per coprire l'immagine retrostante */
+    background-color: rgba(255, 250, 240, 0.95) !important; 
+    border: 1px solid #ffb74d !important;
+    border-radius: 8px !important;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.3) !important;
+}
+
+/* Assicura che il testo dentro il riquadro Errori sia sempre scuro e nitido */
+section[data-testid="stSidebar"] div[data-testid="stAlert"] p {
+    color: #333333 !important;
+    text-shadow: none !important; /* Niente ombra qui dentro, non serve */
+    font-weight: bold !important;
+}
