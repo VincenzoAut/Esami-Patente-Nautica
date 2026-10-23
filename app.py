@@ -15,6 +15,7 @@ from PIL import Image
 import database as db_engine
 import logic as brain
 import ui 
+import admin
 
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Patente Nautica", page_icon="⚓", layout="wide", initial_sidebar_state="expanded")
@@ -43,6 +44,39 @@ ui.load_css()
 
 # --- GESTIONE STATO ---
 brain.initialize_app_state()
+
+# --- PIN GATE ---
+def _secret_pin(name):
+    try:
+        return str(st.secrets["app"][name])
+    except Exception:
+        return ""
+
+CLASS_PIN = _secret_pin("class_pin")
+ADMIN_PIN = _secret_pin("admin_pin")
+
+if (CLASS_PIN or ADMIN_PIN) and not st.session_state.get("unlocked", False):
+    st.markdown("<h1 style='text-align:center;margin-top:12vh'>⚓ Patente Nautica</h1>", unsafe_allow_html=True)
+    _c1, _c2, _c3 = st.columns([1, 1.1, 1])
+    with _c2:
+        _pin = st.text_input("PIN di accesso", type="password", placeholder="Inserisci il PIN")
+        if st.button("ENTRA", type="primary", use_container_width=True):
+            if ADMIN_PIN and _pin == ADMIN_PIN:
+                st.session_state.unlocked = True
+                st.session_state.admin_mode = True
+                st.rerun()
+            elif CLASS_PIN and _pin == CLASS_PIN:
+                st.session_state.unlocked = True
+                st.session_state.admin_mode = False
+                st.rerun()
+            else:
+                st.error("PIN errato.")
+    st.stop()
+
+if st.session_state.get("admin_mode", False):
+    admin.render_admin_dashboard()
+    st.stop()
+
 
 # --- LOGICA CARICAMENTO DATI ---
 if hasattr(brain, 'smart_load_data'):
