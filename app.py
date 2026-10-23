@@ -15,6 +15,8 @@ from PIL import Image
 import database as db_engine
 import logic as brain
 import ui 
+import admin
+import students_engine
 
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Patente Nautica", page_icon="⚓", layout="wide", initial_sidebar_state="expanded")
@@ -43,6 +45,11 @@ ui.load_css()
 
 # --- GESTIONE STATO ---
 brain.initialize_app_state()
+
+# --- PANNELLO ISTRUTTORE ---
+if st.session_state.get("admin_mode", False):
+    admin.render_admin_dashboard()
+    st.stop()
 
 # --- LOGICA CARICAMENTO DATI ---
 if hasattr(brain, 'smart_load_data'):
@@ -216,43 +223,107 @@ with st.sidebar:
     st.title("⚓ Patente Nautica")
     
     if st.session_state.current_user == "Comandante":
-        st.markdown("### 🔑 Accesso Rapido")
-        lista_utenti = db_engine.get_all_users()
-        opzioni = ["➕ NUOVO ALLIEVO"] + [u.title() for u in lista_utenti]
-        scelta = st.selectbox("Chi sei?", opzioni, label_visibility="collapsed")
-        nome_da_usare = ""
-        if scelta == "➕ NUOVO ALLIEVO":
-            nome_da_usare = st.text_input("Scrivi il tuo nome:", placeholder="Nome Cognome...", key="new_user_input")
-        else:
-            nome_da_usare = scelta
+        st.markdown("### 🔑 Accesso")
+        try:
+            _admin_pin = str(st.secrets["app"]["admin_pin"])
+        except Exception:
+            _admin_pin = ""
 
-        if st.button("ENTRA", type="primary", use_container_width=True):
-            nome_clean = nome_da_usare.strip().lower()
-            if len(nome_clean) < 3:
-                st.toast("❌ Nome troppo corto!", icon="⚠️")
-            else:
-                # 1. SETTAGGIO UTENTE E STORICO
-                st.session_state.current_user = nome_clean
-                st.toast(f"Bentornato, {nome_clean.title()}!")
-                raw_hist = db_engine.fetch_user_history(nome_clean)
-                st.session_state.history = {str(k).replace('.0','').strip(): v for k, v in raw_hist.items()}
-                
-                # 2. AVVIO DIRETTO SIMULAZIONE ESAME BASE
-                st.session_state.quiz_mode = "Quiz Base"
-                st.session_state.exam_mode = True # Forza modalità Esame
-                st.session_state.review_mode = False
-                st.session_state.stats_mode = False
-                
-                # 3. CARICAMENTO DOMANDE ESAME
-                reset_game(exam=True)
-                st.rerun()
-                
+        def _do_login(user_id):
+            st.session_state.current_user = user_id
+            raw_hist = db_engine.fetch_user_history(user_id)
+            st.session_state.history = {str(k).replace(".0", "").strip(): v for k, v in raw_hist.items()}
+            st.session_state.quiz_mode = "Quiz Base"
+            st.session_state.exam_mode = True
+            st.session_state.review_mode = False
+            st.session_state.stats_mode = False
+            reset_game(exam=True)
+            st.rerun()
+
+        _db_students = students_engine.list_students()
+        _secrets_students = {}
+        try:
+            for _k, _v in st.secrets["students"].items():
+                _secrets_students[str(_k).lower()] = str(_v.get("pin", "")) if hasattr(_v, "get") else str(_v)
+        except Exception:
+            _secrets_students = {}
+
+        if _db_students:
+            _labels = [r["display_name"] for r in _db_students]
+            _ids = {r["display_name"]: r["user_id"] for r in _db_students}
+            scelta = st.selectbox("Chi sei?", _labels, label_visibility="collapsed")
+            pin_ins = st.text_input("PIN personale", type="password", placeholder="4 cifre", key="pin_studente")
+            if st.button("ENTRA", type="primary", use_container_width=True):
+                res = students_engine.login_student(_ids[scelta], pin_ins.strip()) if pin_ins.strip() else None
+                if res and res.get("ok"):
+                    _do_login(str(res.get("user_id") or _ids[scelta]))
+                else:
+                    st.error("PIN errato.")
+        elif _secrets_students:
+            _nomi = sorted(_secrets_students.keys())
+            scelta = st.selectbox("Chi sei?", [n.title() for n in _nomi], label_visibility="collapsed")
+            pin_ins = st.text_input("PIN personale", type="password", placeholder="4 cifre", key="pin_studente")
+            if st.button("ENTRA", type="primary", use_container_width=True):
+                nome_clean = scelta.strip().lower()
+                if pin_ins.strip() and pin_ins.strip() == _secrets_students.get(nome_clean, ""):
+                    _do_login(nome_clean)
+                else:
+                    st.error("PIN errato.")
+        else:
+            st.warning("Nessun allievo configurato.")
+
+        with st.expander("✉️ Non sei in elenco? Richiedi accesso"):
+            _req_nome = st.text_input("Nome e cognome", key="req_nome")
+            _req_mail = st.text_input("Email", key="req_mail")
+            if st.button("Invia richiesta", key="req_btn"):
+                if len(_req_nome.strip()) >= 3 and "@" in _req_mail:
+                    _res = students_engine.request_access(_req_nome.strip(), _req_mail.strip())
+                    if _res.get("ok"):
+                        _canali = students_engine.notify_access(_req_nome.strip(), _req_mail.strip())
+                        _extra = (" Avviso inviato via " + ", ".join(_canali) + ".") if _canali else ""
+                        st.success("Richiesta inviata." + _extra)
+                    else:
+                        st.error(_res.get("error", "Errore invio richiesta."))
+                else:
+                    st.error("Inserisci nome ed email validi.")
+
+        if _admin_pin:
+            with st.expander("🔐 Area istruttore"):
+                _ap = st.text_input("PIN istruttore", type="password", key="pin_admin")
+                if st.button("Apri pannello", key="btn_admin"):
+                    if _ap.strip() == _admin_pin:
+                        st.session_state.admin_mode = True
+                        st.rerun()
+                    else:
+                        st.error("PIN errato.")
+
     else:
         st.success(f"👤 **{st.session_state.current_user.title()}**")
         if st.button("🚪 ESCI (Cambia Utente)", use_container_width=True):
             st.session_state.current_user = "Comandante"
             st.session_state.history = {} 
             st.rerun()
+        with st.expander("🔑 Cambia il mio PIN"):
+            _np = st.text_input("Nuovo PIN", type="password", key="cambia_pin_nuovo")
+            _np2 = st.text_input("Conferma nuovo PIN", type="password", key="cambia_pin_conf")
+            if st.button("Aggiorna PIN", key="btn_cambia_pin"):
+                _apin2 = ""
+                try:
+                    _apin2 = str(st.secrets["app"]["admin_pin"])
+                except Exception:
+                    _apin2 = ""
+                if len(_np.strip()) < 4:
+                    st.error("Il PIN deve avere almeno 4 caratteri.")
+                elif _np.strip() != _np2.strip():
+                    st.error("I due PIN non coincidono.")
+                elif not _apin2:
+                    st.error("Configurazione admin mancante.")
+                else:
+                    _r = students_engine.admin_reset_pin(st.session_state.current_user, _np.strip(), _apin2)
+                    if _r.get("ok"):
+                        st.success("PIN aggiornato.")
+                    else:
+                        st.error(_r.get("error", "Errore"))
 
     if st.session_state.current_user != "Comandante":
         mastered = len([v for v in st.session_state.history.values() if v['score'] > 0])

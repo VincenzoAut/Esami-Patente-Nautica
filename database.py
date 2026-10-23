@@ -106,3 +106,20 @@ def get_all_users():
 
 # --- 6. ALIAS (IMPORTANTE: QUESTO RISOLVE IL TUO ERRORE) ---
 fetch_user_history = get_user_history
+
+def get_all_history():
+    """Scarica tutto lo storico (paginato) per il pannello istruttore."""
+    supabase = init_connection()
+    if not supabase: return []
+    try:
+        rows, start = [], 0
+        while True:
+            batch = supabase.table("history").select("*").range(start, start + 999).execute()
+            data = batch.data or []
+            rows.extend(data)
+            if len(data) < 1000: break
+            start += 1000
+        return rows
+    except Exception as e:
+        print(f"Errore get_all_history: {e}")
+        return []
