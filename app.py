@@ -18,6 +18,8 @@ import ui
 import admin
 import students_engine
 
+PRIVACY_TEXT = ("**Titolare del trattamento:** Vincenzo Autolitano - vincenzo.autolitano@gmail.com. ""**Finalita:** gestione didattica degli allievi (accesso all app, storico delle risposte, statistiche di apprendimento). ""**Dati trattati:** nome, indirizzo email, risposte ai quiz e relativi punteggi. ""**Base giuridica:** consenso dell interessato. ""**Conservazione:** 24 mesi dall ultima attivita, poi cancellazione. ""**Comunicazione:** nessun dato e condiviso con terzi; il database e ospitato su Supabase. ""**Diritti:** accesso, rettifica, cancellazione e portabilita scrivendo al titolare.")
+
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Patente Nautica", page_icon="⚓", layout="wide", initial_sidebar_state="expanded")
 
@@ -253,9 +255,13 @@ with st.sidebar:
             _ids = {r["display_name"]: r["user_id"] for r in _db_students}
             scelta = st.selectbox("Chi sei?", _labels, label_visibility="collapsed")
             pin_ins = st.text_input("PIN personale", type="password", placeholder="4 cifre", key="pin_studente")
+            _consenso = st.checkbox("Ho letto e accetto l informativa privacy", key="consenso_login")
             if st.button("ENTRA", type="primary", width="stretch"):
                 res = students_engine.login_student(_ids[scelta], pin_ins.strip()) if pin_ins.strip() else None
-                if res and res.get("ok"):
+                if not _consenso:
+                    st.error("Spunta l informativa privacy per entrare.")
+                elif res and res.get("ok"):
+                    students_engine.record_consent(str(res.get("user_id") or _ids[scelta]), pin_ins.strip())
                     _do_login(str(res.get("user_id") or _ids[scelta]))
                 elif res and res.get("locked"):
                     _min = max(1, int(res.get("retry_after", 300)) // 60 + 1)
@@ -275,12 +281,18 @@ with st.sidebar:
         else:
             st.warning("Nessun allievo configurato.")
 
+        with st.expander("🔒 Informativa privacy"):
+            st.markdown(PRIVACY_TEXT)
+
         with st.expander("✉️ Non sei in elenco? Richiedi accesso"):
             _req_nome = st.text_input("Nome e cognome", key="req_nome")
             _req_mail = st.text_input("Email", key="req_mail")
+            _req_consenso = st.checkbox("Ho letto e accetto l informativa privacy", key="req_consent")
             if st.button("Invia richiesta", key="req_btn"):
-                if len(_req_nome.strip()) >= 3 and "@" in _req_mail:
-                    _res = students_engine.request_access(_req_nome.strip(), _req_mail.strip())
+                if not _req_consenso:
+                    st.error("Devi accettare l informativa privacy.")
+                elif len(_req_nome.strip()) >= 3 and "@" in _req_mail:
+                    _res = students_engine.request_access(_req_nome.strip(), _req_mail.strip(), True)
                     if _res.get("ok"):
                         _canali = students_engine.notify_access(_req_nome.strip(), _req_mail.strip())
                         _extra = (" Avviso inviato via " + ", ".join(_canali) + ".") if _canali else ""

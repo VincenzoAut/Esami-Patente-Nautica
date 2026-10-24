@@ -35,6 +35,13 @@ def login_student(name, pin):
     return None
 
 
+def record_consent(name, pin):
+    data = _rpc("record_consent", {"p_name": name, "p_pin": pin})
+    if isinstance(data, dict):
+        return data
+    return {"ok": False}
+
+
 def admin_login(pin):
     data = _rpc("admin_login", {"p_pin": pin})
     if isinstance(data, dict):
@@ -42,8 +49,8 @@ def admin_login(pin):
     return {"ok": False, "error": "Funzione non disponibile"}
 
 
-def request_access(name, email):
-    data = _rpc("request_access", {"p_name": name, "p_email": email})
+def request_access(name, email, consent=False):
+    data = _rpc("request_access", {"p_name": name, "p_email": email, "p_consent": bool(consent)})
     if isinstance(data, dict):
         return data
     return {"ok": False, "error": "Funzione non disponibile"}
