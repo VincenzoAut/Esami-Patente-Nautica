@@ -60,6 +60,25 @@ div.row-widget.stButton > button {
 }
 
 
+
+/* MENO SPAZIO IN ALTO: sidebar e pagina */
+header[data-testid="stHeader"] {
+    height: 2.4rem !important;
+}
+div[data-testid="stAppViewContainer"] > section.main > div.block-container,
+section.main div.block-container {
+    padding-top: 0.8rem !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
+    padding-top: 0 !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stSidebarUserContent"] {
+    padding-top: 0.2rem !important;
+}
+.login-warning {
+    margin-top: 0 !important;
+}
+
 /* SIDEBAR PIU IN ALTO (riduce la striscia bianca) */
 section[data-testid="stSidebar"] div[data-testid="stSidebarContent"],
 section[data-testid="stSidebar"] div[data-testid="stSidebarUserContent"] {
