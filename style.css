@@ -61,6 +61,31 @@ div.row-widget.stButton > button {
 
 
 
+
+/* SPAZIO ZERO: copre le diverse versioni di Streamlit */
+header[data-testid="stHeader"] {
+    height: 1.6rem !important;
+    min-height: 1.6rem !important;
+}
+div[data-testid="stAppViewContainer"] > .main,
+div[data-testid="stAppViewContainer"] > section.main,
+section[data-testid="stMain"] {
+    padding-top: 0 !important;
+}
+div[data-testid="stMainBlockContainer"],
+div[data-testid="stAppViewBlockContainer"],
+.block-container {
+    padding-top: 0.4rem !important;
+    margin-top: 0 !important;
+}
+section[data-testid="stSidebar"] > div {
+    padding-top: 0 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+    padding-top: 0 !important;
+}
+
 /* MENO SPAZIO IN ALTO: sidebar e pagina */
 header[data-testid="stHeader"] {
     height: 2.4rem !important;
