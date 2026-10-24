@@ -67,7 +67,7 @@ div.row-widget.stButton > button {
 .app-title {
     text-align: center;
     color: #003366;
-    font-size: 2rem;
+    font-size: 3.4rem;
     margin: 0 0 0.4rem 0;
     text-shadow: 1px 1px 3px rgba(255,255,255,0.9);
 }
@@ -154,7 +154,7 @@ section[data-testid="stSidebar"] > div:first-child {
     max-width: 900px;
 }
 .welcome-title {
-    font-size: 3.2rem; 
+    font-size: 1.8rem; 
     font-weight: 800; 
     color: #003366;
     text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8); 
