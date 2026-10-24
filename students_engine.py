@@ -49,6 +49,18 @@ def request_access(name, email):
     return {"ok": False, "error": "Funzione non disponibile"}
 
 
+def admin_list_deleted(admin_pin):
+    data = _rpc("admin_list_deleted", {"p_admin": admin_pin})
+    return data or []
+
+
+def admin_restore_student(name, admin_pin):
+    data = _rpc("admin_restore_student", {"p_name": name, "p_admin": admin_pin})
+    if isinstance(data, dict):
+        return data
+    return {"ok": False, "error": "Funzione non disponibile"}
+
+
 def admin_add_student(name, email, pin, admin_pin):
     data = _rpc("admin_add_student", {
         "p_name": name, "p_email": email, "p_pin": pin, "p_admin": admin_pin,

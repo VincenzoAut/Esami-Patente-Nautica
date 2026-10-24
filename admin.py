@@ -124,9 +124,9 @@ def render_admin_dashboard():
                     else:
                         st.error(_r.get("error", "Errore"))
         with _c2:
-            st.markdown("**Elimina allievo**")
-            st.warning(f"Stai per eliminare: {_nome_sel}")
-            _del_hist = st.checkbox("Elimina anche lo storico", value=True, key="del_hist")
+            st.markdown("**Sposta nel cestino**")
+            st.warning(f"Stai per spostare nel cestino: {_nome_sel}")
+            st.caption("Lo storico viene conservato. Potrai ripristinarlo.")
             _conf = st.text_input(
                 f"Scrivi {_nome_sel} per confermare", key=f"conf_del_{_nome_sel}"
             )
@@ -134,13 +134,33 @@ def render_admin_dashboard():
                 if _conf.strip().lower() != _nome_sel.strip().lower():
                     st.warning("Il nome non coincide: eliminazione annullata.")
                 else:
-                    _r = students_engine.admin_delete_student(_nome_sel, admin_pin, _del_hist)
+                    _r = students_engine.admin_delete_student(_nome_sel, admin_pin, False)
                     if _r.get("ok"):
-                        st.success(f"{_nome_sel} eliminato.")
+                        st.success(f"{_nome_sel} spostato nel cestino.")
                         st.rerun()
                     else:
                         st.error(_r.get("error", "Errore"))
         st.write("")
+
+    _cestino = students_engine.admin_list_deleted(admin_pin)
+    if _cestino:
+        with st.expander(f"🗑️ Cestino ({len(_cestino)})"):
+            st.dataframe(
+                pd.DataFrame([
+                    {"Allievo": r["display_name"], "Email": r["email"],
+                     "Eliminato": str(r["deleted_at"])[:16].replace("T", " ")}
+                    for r in _cestino
+                ]),
+                use_container_width=True, hide_index=True,
+            )
+            _sel_c = st.selectbox("Allievo da ripristinare", [r["display_name"] for r in _cestino], key="restore_sel")
+            if st.button("Ripristina", key="btn_restore"):
+                _r = students_engine.admin_restore_student(_sel_c, admin_pin)
+                if _r.get("ok"):
+                    st.success(f"{_sel_c} ripristinato.")
+                    st.rerun()
+                else:
+                    st.error(_r.get("error", "Errore"))
 
     df = _load_df()
     if df.empty:
