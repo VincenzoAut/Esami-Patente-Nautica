@@ -266,6 +266,7 @@ with st.sidebar:
                     st.error("Spunta l informativa privacy per entrare.")
                 elif res and res.get("ok"):
                     students_engine.record_consent(str(res.get("user_id") or _ids[scelta]), pin_ins.strip())
+                    st.session_state["last_login"] = res.get("last_login")
                     _do_login(str(res.get("user_id") or _ids[scelta]))
                 elif res and res.get("locked"):
                     _min = max(1, int(res.get("retry_after", 300)) // 60 + 1)
@@ -323,9 +324,19 @@ with st.sidebar:
 
     else:
         st.success(f"👤 **{st.session_state.current_user.title()}**")
+        _ultimo = st.session_state.get("last_login")
+        if _ultimo:
+            try:
+                _dt = datetime.datetime.fromisoformat(str(_ultimo).replace("Z", "+00:00"))
+                st.caption(f"Ultimo accesso: {_dt.strftime('%d/%m/%Y %H:%M')}")
+            except Exception:
+                st.caption(f"Ultimo accesso: {_ultimo}")
+        else:
+            st.caption("Primo accesso")
         if st.button("🚪 ESCI (Cambia Utente)", width="stretch"):
             st.session_state.carteggio_mode = False
             st.session_state.current_user = "Comandante"
+            st.session_state["last_login"] = None
             st.session_state.history = {} 
             st.rerun()
         with st.expander("🔑 Cambia il mio PIN"):
