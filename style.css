@@ -59,15 +59,25 @@ div.row-widget.stButton > button {
     color: #333;
 }
 
+
+/* SIDEBAR PIU IN ALTO (riduce la striscia bianca) */
+section[data-testid="stSidebar"] div[data-testid="stSidebarContent"],
+section[data-testid="stSidebar"] div[data-testid="stSidebarUserContent"] {
+    padding-top: 0.6rem !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    padding-top: 0.6rem !important;
+}
 /* --- STILE PAGINA BENVENUTO --- */
 .login-warning {
-    padding: 2rem;
+    padding: 1.5rem;
     background-color: transparent;
     text-align: center;
-    margin-top: 50px;
+    margin: 1rem auto 0 auto;
+    max-width: 900px;
 }
 .welcome-title {
-    font-size: 3.5rem; 
+    font-size: 3.2rem; 
     font-weight: 800; 
     color: #003366;
     text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8); 

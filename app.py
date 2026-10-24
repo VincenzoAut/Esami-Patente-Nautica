@@ -436,7 +436,7 @@ with st.sidebar:
     with st.expander("🔒 Informativa privacy"):
         st.markdown(PRIVACY_TEXT)
 
-    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v119.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v2.0 • Ottobre 2026</div>""", unsafe_allow_html=True)
 
 
 # --- GATEKEEPER ---
