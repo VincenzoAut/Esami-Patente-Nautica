@@ -222,7 +222,6 @@ def next_question():
 
 # --- SIDEBAR (LOGIN & MENU) ---
 with st.sidebar:
-    st.title("⚓ Patente Nautica")
     
     if st.session_state.current_user == "Comandante":
         st.markdown("### 🔑 Accesso")
