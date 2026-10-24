@@ -17,6 +17,7 @@ import logic as brain
 import ui 
 import admin
 import students_engine
+import carteggio_ui
 
 PRIVACY_TEXT = ("**Titolare del trattamento:** Vincenzo Autolitano - vincenzo.autolitano@gmail.com. ""**Finalita:** gestione didattica degli allievi (accesso all app, storico delle risposte, statistiche di apprendimento). ""**Dati trattati:** nome, indirizzo email, risposte ai quiz e relativi punteggi. ""**Base giuridica:** consenso dell interessato. ""**Conservazione:** 24 mesi dall ultima attivita, poi cancellazione. ""**Comunicazione:** nessun dato e condiviso con terzi; il database e ospitato su Supabase. ""**Diritti:** accesso, rettifica, cancellazione e portabilita scrivendo al titolare.")
 
@@ -51,6 +52,10 @@ brain.initialize_app_state()
 # --- PANNELLO ISTRUTTORE ---
 if st.session_state.get("admin_mode", False):
     admin.render_admin_dashboard()
+    st.stop()
+
+if st.session_state.get("carteggio_mode", False):
+    carteggio_ui.render()
     st.stop()
 
 # --- LOGICA CARICAMENTO DATI ---
@@ -319,6 +324,7 @@ with st.sidebar:
     else:
         st.success(f"👤 **{st.session_state.current_user.title()}**")
         if st.button("🚪 ESCI (Cambia Utente)", width="stretch"):
+            st.session_state.carteggio_mode = False
             st.session_state.current_user = "Comandante"
             st.session_state.history = {} 
             st.rerun()
@@ -403,6 +409,9 @@ with st.sidebar:
             else:
                 st.success("✅ Nessun errore in sospeso")
         
+        if st.button("📐 ESERCIZI DI CARTEGGIO", width="stretch"):
+            st.session_state.carteggio_mode = True
+            st.rerun()
         st.button("📊 STATISTICHE", width="stretch", on_click=reset_game, kwargs={'stats': True})
     
     st.write("---")
