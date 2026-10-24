@@ -253,7 +253,7 @@ with st.sidebar:
             _ids = {r["display_name"]: r["user_id"] for r in _db_students}
             scelta = st.selectbox("Chi sei?", _labels, label_visibility="collapsed")
             pin_ins = st.text_input("PIN personale", type="password", placeholder="4 cifre", key="pin_studente")
-            if st.button("ENTRA", type="primary", use_container_width=True):
+            if st.button("ENTRA", type="primary", width="stretch"):
                 res = students_engine.login_student(_ids[scelta], pin_ins.strip()) if pin_ins.strip() else None
                 if res and res.get("ok"):
                     _do_login(str(res.get("user_id") or _ids[scelta]))
@@ -266,7 +266,7 @@ with st.sidebar:
             _nomi = sorted(_secrets_students.keys())
             scelta = st.selectbox("Chi sei?", [n.title() for n in _nomi], label_visibility="collapsed")
             pin_ins = st.text_input("PIN personale", type="password", placeholder="4 cifre", key="pin_studente")
-            if st.button("ENTRA", type="primary", use_container_width=True):
+            if st.button("ENTRA", type="primary", width="stretch"):
                 nome_clean = scelta.strip().lower()
                 if pin_ins.strip() and pin_ins.strip() == _secrets_students.get(nome_clean, ""):
                     _do_login(nome_clean)
@@ -310,7 +310,7 @@ with st.sidebar:
 
     else:
         st.success(f"👤 **{st.session_state.current_user.title()}**")
-        if st.button("🚪 ESCI (Cambia Utente)", use_container_width=True):
+        if st.button("🚪 ESCI (Cambia Utente)", width="stretch"):
             st.session_state.current_user = "Comandante"
             st.session_state.history = {} 
             st.rerun()
@@ -374,10 +374,10 @@ with st.sidebar:
                     on_change=start_filtered_training 
                 )
         
-        st.button("🎓 SIMULAZIONE ESAME", type="primary", use_container_width=True, on_click=reset_game, kwargs={'exam': True})
+        st.button("🎓 SIMULAZIONE ESAME", type="primary", width="stretch", on_click=reset_game, kwargs={'exam': True})
         
         # Il pulsante rimane per chi vuole cliccare, ma il selectbox già avvia tutto.
-        st.button("♾️ ALLENAMENTO SMART", use_container_width=True, on_click=reset_game, kwargs={'exam': False, 'topic': selected_topic})
+        st.button("♾️ ALLENAMENTO SMART", width="stretch", on_click=reset_game, kwargs={'exam': False, 'topic': selected_topic})
         
         db = load_data(st.session_state.quiz_mode)
         if not db.empty:
@@ -389,13 +389,13 @@ with st.sidebar:
             
             if errs_count > 0: 
                 st.warning(f"⚠️ **{errs_count} Errori in memoria**")
-                if st.button("🔄 RIPASSA ERRORI", use_container_width=True):
+                if st.button("🔄 RIPASSA ERRORI", width="stretch"):
                     reset_game(review=True)
                     st.rerun()
             else:
                 st.success("✅ Nessun errore in sospeso")
         
-        st.button("📊 STATISTICHE", use_container_width=True, on_click=reset_game, kwargs={'stats': True})
+        st.button("📊 STATISTICHE", width="stretch", on_click=reset_game, kwargs={'stats': True})
     
     st.write("---")
     with st.expander("ℹ️ Info & Regole d'uso"):
@@ -538,7 +538,7 @@ else:
                 """, unsafe_allow_html=True)
                 
                 st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("PROSSIMA DOMANDA ➡", type="primary", use_container_width=True): 
+                if st.button("PROSSIMA DOMANDA ➡", type="primary", width="stretch"): 
                     next_question(); st.rerun()
 
             else:
@@ -546,16 +546,16 @@ else:
                 for i, opt in enumerate(st.session_state.shuffled_options):
                     btn_label = opt['txt']
                     if "Vela" in st.session_state.quiz_mode: btn_label = f"⚪ {opt['txt']}"
-                    if st.button(btn_label, key=f"btn_{i}", use_container_width=True):
+                    if st.button(btn_label, key=f"btn_{i}", width="stretch"):
                         answer(opt['ok'], i); st.rerun()
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 c_skip, c_idk = st.columns(2)
                 with c_skip:
                     if st.session_state.exam_mode:
-                        if st.button("⏭️ SALTA", use_container_width=True): skip_current_question(); st.rerun()
+                        if st.button("⏭️ SALTA", width="stretch"): skip_current_question(); st.rerun()
                 with c_idk:
-                    if st.button("🚩 Non la so!", use_container_width=True): answer(False, -1); st.rerun()
+                    if st.button("🚩 Non la so!", width="stretch"): answer(False, -1); st.rerun()
     
     if st.session_state.current_row is None: 
         if not st.session_state.exam_finished and st.session_state.current_user != "Comandante":

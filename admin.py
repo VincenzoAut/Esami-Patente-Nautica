@@ -69,7 +69,7 @@ def render_admin_dashboard():
     pendenti = [r for r in richieste if r["Stato"] == "pending"]
     if pendenti:
         st.error(f"🔔 {len(pendenti)} richiesta/e di accesso in attesa")
-        st.dataframe(pd.DataFrame(pendenti)[["Nome", "Email", "Data"]], use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(pendenti)[["Nome", "Email", "Data"]], width="stretch", hide_index=True)
         _labels_p = [f'{r["Nome"]} — {r["Email"]}' for r in pendenti]
         _sel_p = st.selectbox("Richiesta da approvare", _labels_p, key="sel_pendente")
         _req_p = pendenti[_labels_p.index(_sel_p)]
@@ -101,7 +101,7 @@ def render_admin_dashboard():
     registro, da_db = _registry(admin_pin)
     if registro:
         st.markdown("### Registro allievi")
-        st.dataframe(pd.DataFrame(registro), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(registro), width="stretch", hide_index=True)
         if not da_db:
             st.caption("Registro locale (tabelle Supabase non ancora create).")
         st.write("")
@@ -151,7 +151,7 @@ def render_admin_dashboard():
                      "Eliminato": str(r["deleted_at"])[:16].replace("T", " ")}
                     for r in _cestino
                 ]),
-                use_container_width=True, hide_index=True,
+                width="stretch", hide_index=True,
             )
             _sel_c = st.selectbox("Allievo da ripristinare", [r["display_name"] for r in _cestino], key="restore_sel")
             if st.button("Ripristina", key="btn_restore"):
@@ -191,7 +191,7 @@ def render_admin_dashboard():
     st.markdown("### Statistiche per allievo")
     st.dataframe(
         per_user[["allievo", "domande", "padroneggiate", "critiche", "ultima"]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config={
             "allievo": "Allievo",
@@ -216,7 +216,7 @@ def render_admin_dashboard():
         .reset_index()
         .sort_values(["critiche", "domande"], ascending=False)
     )
-    st.dataframe(agg, use_container_width=True, hide_index=True)
+    st.dataframe(agg, width="stretch", hide_index=True)
 
     st.download_button(
         "Scarica CSV completo",

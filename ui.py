@@ -3,6 +3,7 @@
 # DATE: 2026-01-11
 
 import streamlit as st
+import time
 import base64
 import os
 
@@ -195,54 +196,30 @@ def draw_stats_dashboard_advanced(df_stats):
         
         st.dataframe(
             df_stats.style.background_gradient(cmap="RdYlGn", subset=valid_cols),
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )
     except Exception:
-        st.dataframe(df_stats, use_container_width=True, hide_index=True)
+        st.dataframe(df_stats, width="stretch", hide_index=True)
 
 # FILE: ui.py
 import streamlit as st
-import streamlit.components.v1 as components
-import time
-
+@st.fragment(run_every=1)
 def display_exam_timer(end_timestamp):
-    """Visualizza il timer HTML/JS per l'esame."""
-    end_js = int(end_timestamp * 1000)
-    timer_html = f"""
-    <style>
-        body {{ margin: 0; padding: 0; display:flex; justify-content:center; }}
-        .timer-box {{
-            font-family: monospace; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: #fffbf0; 
-            padding: 8px 15px; 
-            border-radius: 8px; 
-            border: 2px solid #ff9800; 
-            width: 95%;
-            box-sizing: border-box;
-            white-space: nowrap;
-            color: #d32f2f;
-            font-weight: bold;
-            font-size: 1.2em;
-        }}
-    </style>
-    <div class="timer-box">
-        <span style="margin-right:8px; font-size:0.9em; color:#555;">⏱️</span>
-        <span id="cnt">--:--</span>
-    </div>
-    <script>
-    setInterval(function(){{
-        var dist={end_js}-new Date().getTime(); 
-        if(dist<0) document.getElementById("cnt").innerHTML="SCADUTO"; 
-        else {{ 
-            var m=Math.floor((dist%(1000*60*60))/(1000*60)); 
-            var s=Math.floor((dist%(1000*60))/1000); 
-            document.getElementById("cnt").innerHTML=(m<10?"0"+m:m)+":"+(s<10?"0"+s:s); 
-        }} 
-    }}, 1000);
-    </script>
-    """
-    components.html(timer_html, height=70)
+    """Timer nativo Streamlit, aggiornato ogni secondo."""
+    remaining = int(end_timestamp - time.time())
+    if remaining <= 0:
+        label = "SCADUTO"
+    else:
+        minutes, seconds = divmod(remaining, 60)
+        label = f"{minutes:02d}:{seconds:02d}"
+
+    st.markdown(
+        "<div style='font-family:monospace;text-align:center;background:#fffbf0;"
+        "border:2px solid #ff9800;border-radius:8px;padding:8px 15px;"
+        "color:#d32f2f;font-weight:bold;font-size:1.2em;'>⏱️ " + label + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    if remaining <= 0:
+        st.rerun()
