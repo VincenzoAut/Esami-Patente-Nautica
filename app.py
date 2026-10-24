@@ -293,7 +293,11 @@ with st.sidebar:
         with st.expander("🔐 Area istruttore"):
             _ap = st.text_input("PIN istruttore", type="password", key="pin_admin")
             if st.button("Apri pannello", key="btn_admin"):
-                _res = students_engine.admin_login(_ap.strip())
+                try:
+                    _sb = db_engine.init_connection()
+                    _res = _sb.rpc("admin_login", {"p_pin": _ap.strip()}).execute().data if _sb else {"ok": False}
+                except Exception as _e:
+                    _res = {"ok": False, "error": str(_e)}
                 if _res.get("ok"):
                     st.session_state.admin_pin_value = _ap.strip()
                     st.session_state.admin_mode = True
