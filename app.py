@@ -281,9 +281,6 @@ with st.sidebar:
         else:
             st.warning("Nessun allievo configurato.")
 
-        with st.expander("🔒 Informativa privacy"):
-            st.markdown(PRIVACY_TEXT)
-
         with st.expander("✉️ Non sei in elenco? Richiedi accesso"):
             _req_nome = st.text_input("Nome e cognome", key="req_nome")
             _req_mail = st.text_input("Email", key="req_mail")
@@ -436,6 +433,9 @@ with st.sidebar:
                 else:
                     st.warning("Scrivi un messaggio.")
 
+    with st.expander("🔒 Informativa privacy"):
+        st.markdown(PRIVACY_TEXT)
+
     st.markdown("""<div class='credits-box'><b>Developed by Vincenzo Autolitano</b><br>v119.0 • Powered by Gemini AI</div>""", unsafe_allow_html=True)
 
 
@@ -446,10 +446,12 @@ if st.session_state.current_user == "Comandante":
         <div class='welcome-title'>⚓ BENVENUTO A BORDO!</div>
         <div class='welcome-text'>
             <p>Per iniziare la navigazione:</p>
-            <p>👈 <b>1. Vai nella barra laterale a sinistra</b></p>
-            <p>👈 <b>2. Seleziona il tuo nome e premi ENTRA</b></p>
-            <p>📝 <b>3. Se sei un nuovo allievo, inserisci il tuo nome</b></p>
-            <p style="margin-top:20px; color:#2e7d32;">🌊 <b>4. Buon vento!</b></p>
+            <p>👈 <b>1. Scegli il tuo nome nella barra a sinistra</b></p>
+            <p>🔑 <b>2. Inserisci il tuo PIN personale</b></p>
+            <p>✅ <b>3. Spunta l informativa privacy e premi ENTRA</b></p>
+            <p>✉️ <b>4. Non sei in elenco? Usa Richiedi accesso</b></p>
+            <p>🛟 <b>5. Dopo 5 tentativi errati l accesso si blocca per 5 minuti</b></p>
+            <p style="margin-top:20px; color:#2e7d32;">🌊 <b>6. Buon vento!</b></p>
         </div>
     </div>
     """, unsafe_allow_html=True)
