@@ -441,6 +441,7 @@ with st.sidebar:
 
 # --- GATEKEEPER ---
 if st.session_state.current_user == "Comandante":
+    st.markdown("<h1 class='app-title'>⚓ App Patente Nautica</h1>", unsafe_allow_html=True)
     st.markdown("""
     <div class='login-warning'>
         <div class='welcome-title'>⚓ BENVENUTO A BORDO!</div>

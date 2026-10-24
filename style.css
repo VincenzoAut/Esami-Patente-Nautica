@@ -62,6 +62,39 @@ div.row-widget.stButton > button {
 
 
 
+
+/* TITOLO APP */
+.app-title {
+    text-align: center;
+    color: #003366;
+    font-size: 2rem;
+    margin: 0 0 0.4rem 0;
+    text-shadow: 1px 1px 3px rgba(255,255,255,0.9);
+}
+
+/* TIRA SU TUTTO (margini negativi, indipendenti dai padding) */
+div[data-testid="stMainBlockContainer"],
+.block-container {
+    padding-top: 0 !important;
+    margin-top: -3rem !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+    padding-top: 0 !important;
+    margin-top: -2rem !important;
+}
+
+/* SIDEBAR COMPATTA */
+section[data-testid="stSidebar"] {
+    font-size: 0.9rem;
+}
+section[data-testid="stSidebar"] .stExpander {
+    margin-bottom: 0.3rem !important;
+}
+section[data-testid="stSidebar"] .stTextInput,
+section[data-testid="stSidebar"] .stSelectbox {
+    margin-bottom: 0.35rem !important;
+}
+
 /* SPAZIO ZERO: copre le diverse versioni di Streamlit */
 header[data-testid="stHeader"] {
     height: 1.6rem !important;
