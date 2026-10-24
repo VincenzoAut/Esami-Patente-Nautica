@@ -409,10 +409,10 @@ with st.sidebar:
             else:
                 st.success("✅ Nessun errore in sospeso")
         
-        st.button("📊 STATISTICHE", width="stretch", on_click=reset_game, kwargs={'stats': True})
         if st.button("📐 ESERCIZI DI CARTEGGIO", width="stretch"):
             st.session_state.carteggio_mode = True
             st.rerun()
+        st.button("📊 STATISTICHE", width="stretch", on_click=reset_game, kwargs={'stats': True})
     
     st.write("---")
     with st.expander("ℹ️ Info & Regole d'uso"):
