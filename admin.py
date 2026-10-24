@@ -7,6 +7,9 @@ import students_engine
 
 
 def _admin_pin():
+    value = st.session_state.get("admin_pin_value")
+    if value:
+        return str(value)
     try:
         return str(st.secrets["app"]["admin_pin"])
     except Exception:
@@ -209,5 +212,6 @@ def _logout():
     st.write("---")
     if st.button("Esci dal pannello"):
         st.session_state.admin_mode = False
+        st.session_state.admin_pin_value = ""
         st.session_state.current_user = "Comandante"
         st.rerun()

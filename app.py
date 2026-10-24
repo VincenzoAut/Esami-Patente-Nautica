@@ -257,6 +257,9 @@ with st.sidebar:
                 res = students_engine.login_student(_ids[scelta], pin_ins.strip()) if pin_ins.strip() else None
                 if res and res.get("ok"):
                     _do_login(str(res.get("user_id") or _ids[scelta]))
+                elif res and res.get("locked"):
+                    _min = max(1, int(res.get("retry_after", 300)) // 60 + 1)
+                    st.error(f"Troppi tentativi. Riprova tra {_min} minuti.")
                 else:
                     st.error("PIN errato.")
         elif _secrets_students:
@@ -287,15 +290,19 @@ with st.sidebar:
                 else:
                     st.error("Inserisci nome ed email validi.")
 
-        if _admin_pin:
-            with st.expander("🔐 Area istruttore"):
-                _ap = st.text_input("PIN istruttore", type="password", key="pin_admin")
-                if st.button("Apri pannello", key="btn_admin"):
-                    if _ap.strip() == _admin_pin:
-                        st.session_state.admin_mode = True
-                        st.rerun()
-                    else:
-                        st.error("PIN errato.")
+        with st.expander("🔐 Area istruttore"):
+            _ap = st.text_input("PIN istruttore", type="password", key="pin_admin")
+            if st.button("Apri pannello", key="btn_admin"):
+                _res = students_engine.admin_login(_ap.strip())
+                if _res.get("ok"):
+                    st.session_state.admin_pin_value = _ap.strip()
+                    st.session_state.admin_mode = True
+                    st.rerun()
+                elif _res.get("locked"):
+                    _min = max(1, int(_res.get("retry_after", 300)) // 60 + 1)
+                    st.error(f"Troppi tentativi. Riprova tra {_min} minuti.")
+                else:
+                    st.error("PIN errato.")
 
     else:
         st.success(f"👤 **{st.session_state.current_user.title()}**")

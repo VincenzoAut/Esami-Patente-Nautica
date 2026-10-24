@@ -35,6 +35,13 @@ def login_student(name, pin):
     return None
 
 
+def admin_login(pin):
+    data = _rpc("admin_login", {"p_pin": pin})
+    if isinstance(data, dict):
+        return data
+    return {"ok": False, "error": "Funzione non disponibile"}
+
+
 def request_access(name, email):
     data = _rpc("request_access", {"p_name": name, "p_email": email})
     if isinstance(data, dict):
